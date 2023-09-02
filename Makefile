@@ -18,6 +18,12 @@ $(STATIK_GENERATED): $(PUBLIC_FILES)
 	echo "$(PUBLIC_FILES)"
 	$(STATIK) -f -src=public/ -dest=.
 
+reqs:
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+	go install github.com/rakyll/statik
+.PHONY: reqs
+
 build: $(PROTO_GENERATED) $(STATIK_GENERATED)
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/rtmp-auth
 .PHONY: build
