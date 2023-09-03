@@ -18,8 +18,7 @@ jobs:
 
       - name: Build
         run: | 
-          echo $GOPATH
-          export PATH=$PATH:$GOPATH/bin
+          echo $GOBIN=$HOME/bin
           echo $PATH
           make reqs-debian
           make build
