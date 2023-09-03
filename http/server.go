@@ -81,6 +81,7 @@ type API struct {
 
 func NewAPI(address string, config ServerConfig, store *store.Store) *API {
 	router := mux.NewRouter()
+	router.Path("/auth").Methods("POST").HandlerFunc(PlayHandler(store))
 	router.Path("/publish").Methods("POST").HandlerFunc(PublishHandler(store))
 	router.Path("/unpublish").Methods("POST").HandlerFunc(UnpublishHandler(store))
 

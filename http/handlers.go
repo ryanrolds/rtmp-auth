@@ -74,7 +74,7 @@ type SRSPublish struct {
 	Param  string `json:"param"`
 }
 
-func handleSRSPublish(r *http.Request) (app string, name string, auth string, action string, err error) {
+func handleSRSRequest(r *http.Request) (app string, name string, auth string, action string, err error) {
 	defer r.Body.Close()
 	var publish SRSPublish
 	dec := json.NewDecoder(r.Body)
@@ -99,7 +99,7 @@ func handleSRSPublish(r *http.Request) (app string, name string, auth string, ac
 	return
 }
 
-func handleNginxPublish(r *http.Request) (app string, name string, auth string, action string, err error) {
+func handleNginxRequest(r *http.Request) (app string, name string, auth string, action string, err error) {
 	err = r.ParseForm()
 	if err != nil {
 		return
@@ -110,6 +110,94 @@ func handleNginxPublish(r *http.Request) (app string, name string, auth string, 
 	auth = r.PostForm.Get("auth")
 	action = r.PostForm.Get("call")
 	return
+}
+
+// AuthHandler checks requests for authentication
+func AuthHandler(store *store.Store) handleFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		var app string
+		var name string
+		var auth string
+		var action string
+		var err error
+		if r.Header.Get("Content-Type") == "application/json" {
+			// SRS publish handler
+			app, name, auth, action, err = handleSRSRequest(r)
+		} else {
+			// Form DATA from nginx-rtmp/srtrelay
+			app, name, auth, action, err = handleNginxRequest(r)
+		}
+
+		if err != nil {
+			log.Println("Failed to parse play data:", err)
+			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		success, id := store.Auth(app, name, auth)
+		if !success {
+			log.Printf("%s %s %s/%s unauthorized\n", action, id, app, name)
+			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		store.SetActive(id)
+		log.Printf("%s %s %s/%s ok\n", action, id, app, name)
+
+		// SRS needs zero response
+		w.Write([]byte("0"))
+	}
+}
+
+func PlayHandler(store *store.Store) handleFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		var app string
+		var name string
+		var auth string
+		var action string
+		var err error
+
+		if r.Header.Get("Content-Type") == "application/json" {
+			// SRS publish handler
+			app, name, auth, action, err = handleSRSRequest(r)
+			if action != "on_play" {
+				err = fmt.Errorf("invalid action %s", action)
+			}
+		} else {
+			// Form DATA from nginx-rtmp/srtrelay
+			app, name, auth, action, err = handleNginxRequest(r)
+			log.Println("publish action", action)
+
+			// only apply auth for publish
+			if action != "publish" {
+				return
+			}
+		}
+		log.Println(app, name, auth, err)
+		if err != nil {
+			log.Println("Failed to parse play data:", err)
+			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		log.Printf("play %s/%s auth: '%s'\n", app, name, auth)
+
+		success, id := store.Auth(app, name, auth)
+		if !success {
+			log.Printf("Play %s %s/%s unauthorized\n", id, app, name)
+			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		store.SetActive(id)
+		log.Printf("Play %s %s/%s ok\n", id, app, name)
+
+		// SRS needs zero response
+		w.Write([]byte("0"))
+	}
 }
 
 func PublishHandler(store *store.Store) handleFunc {
@@ -123,13 +211,13 @@ func PublishHandler(store *store.Store) handleFunc {
 
 		if r.Header.Get("Content-Type") == "application/json" {
 			// SRS publish handler
-			app, name, auth, action, err = handleSRSPublish(r)
+			app, name, auth, action, err = handleSRSRequest(r)
 			if action != "on_publish" {
 				err = fmt.Errorf("invalid action %s", action)
 			}
 		} else {
 			// Form DATA from nginx-rtmp/srtrelay
-			app, name, auth, action, err = handleNginxPublish(r)
+			app, name, auth, action, err = handleNginxRequest(r)
 			log.Println("publish action", action)
 
 			// only apply auth for publish
@@ -170,13 +258,13 @@ func UnpublishHandler(store *store.Store) handleFunc {
 
 		if r.Header.Get("Content-Type") == "application/json" {
 			// SRS publish handler
-			app, name, _, action, err = handleSRSPublish(r)
+			app, name, _, action, err = handleSRSRequest(r)
 			if action != "on_unpublish" {
 				err = fmt.Errorf("invalid action %s", action)
 			}
 		} else {
 			// Form DATA from nginx-rtmp/srtrelay
-			app, name, _, action, err = handleNginxPublish(r)
+			app, name, _, action, err = handleNginxRequest(r)
 			log.Println("unpublish action", action)
 			// ignore actions except unpublish
 			if action != "unpublish" {

@@ -26,21 +26,21 @@ jobs:
           build-args: |
             GIT_SHA=${{ github.sha }}
 
-      # - name: Generate a token
-      #   id: generate_token
-      #   uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
-      #   with:
-      #     app_id: ${{ secrets.PO_APP_ID }}
-      #     private_key: ${{ secrets.PO_PRIVATE_KEY }}
+      - name: Generate a token
+        id: generate_token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{ secrets.PO_APP_ID }}
+          private_key: ${{ secrets.PO_PRIVATE_KEY }}
 
-      # - name: Update image tag in values.yaml
-      #   env:
-      #     GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-      #   run: |
-      #     gh workflow run image_update.yaml \
-      #       -R ryanrolds/k8s-cluster \
-      #       -r master \
-      #       -F chart=rtmp-auth \
-      #       -F values_file=values.yaml \ 
-      #       -F tag_path=image.tag \
-      #       -F tag=${{ github.sha }}
+      - name: Update image tag in values.yaml
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          gh workflow run image_update.yaml \
+            -R ryanrolds/infrastructure \
+            -r main \
+            -F chart=rtmp \
+            -F values_file=values.yaml \ 
+            -F tag_path=rtmpAuth.tag \
+            -F tag=${{ github.sha }}
