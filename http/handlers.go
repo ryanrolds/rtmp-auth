@@ -143,93 +143,13 @@ func AuthHandler(store *store.Store) handleFunc {
 			return
 		}
 
-		store.SetActive(id)
+		if action == "on_publish" || action == "publish" {
+			store.SetActive(id)
+		} else if action == "on_unpublish" || action == "unpublish" {
+			store.SetInactive(app, name)
+		}
+
 		log.Printf("%s %s %s/%s ok\n", action, id, app, name)
-
-		// SRS needs zero response
-		w.Write([]byte("0"))
-	}
-}
-
-func PublishHandler(store *store.Store) handleFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		var app string
-		var name string
-		var auth string
-		var action string
-		var err error
-
-		if r.Header.Get("Content-Type") == "application/json" {
-			// SRS publish handler
-			app, name, auth, action, err = handleSRSRequest(r)
-			if action != "on_publish" {
-				err = fmt.Errorf("invalid action %s", action)
-			}
-		} else {
-			// Form DATA from nginx-rtmp/srtrelay
-			app, name, auth, action, err = handleNginxRequest(r)
-			log.Println("publish action", action)
-
-			// only apply auth for publish
-			if action != "publish" {
-				return
-			}
-		}
-		log.Println(app, name, auth, err)
-		if err != nil {
-			log.Println("Failed to parse publish data:", err)
-			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		log.Printf("publish %s/%s auth: '%s'\n", app, name, auth)
-
-		success, id := store.Auth(app, name, auth)
-		if !success {
-			log.Printf("Publish %s %s/%s unauthorized\n", id, app, name)
-			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		store.SetActive(id)
-		log.Printf("Publish %s %s/%s ok\n", id, app, name)
-
-		// SRS needs zero response
-		w.Write([]byte("0"))
-	}
-}
-
-func UnpublishHandler(store *store.Store) handleFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var app string
-		var name string
-		var action string
-		var err error
-
-		if r.Header.Get("Content-Type") == "application/json" {
-			// SRS publish handler
-			app, name, _, action, err = handleSRSRequest(r)
-			if action != "on_unpublish" {
-				err = fmt.Errorf("invalid action %s", action)
-			}
-		} else {
-			// Form DATA from nginx-rtmp/srtrelay
-			app, name, _, action, err = handleNginxRequest(r)
-			log.Println("unpublish action", action)
-			// ignore actions except unpublish
-			if action != "unpublish" {
-				return
-			}
-		}
-
-		if err != nil {
-			log.Println("Failed to parse unpublish data:", err)
-			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
-			return
-		}
-		store.SetInactive(app, name)
-		log.Printf("Unpublish %s/%s ok\n", app, name)
 
 		// SRS needs zero response
 		w.Write([]byte("0"))

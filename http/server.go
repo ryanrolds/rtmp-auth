@@ -3,12 +3,14 @@ package http
 import (
 	"context"
 	"log"
+	"os"
 	"sync"
 	"time"
 
 	"net/http"
 
 	"github.com/gorilla/csrf"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	_ "github.com/voc/rtmp-auth/statik"
@@ -37,6 +39,8 @@ func NewFrontend(address string, config ServerConfig, store *store.Store) *Front
 		log.Fatal(err)
 	}
 	router := mux.NewRouter()
+	router.Use(func(next http.Handler) http.Handler { return handlers.LoggingHandler(os.Stdout, next) })
+
 	sub := router.PathPrefix(config.Prefix).Subrouter()
 	sub.Path("/").Methods("GET").HandlerFunc(FormHandler(store, config))
 	sub.Path("/add").Methods("POST").HandlerFunc(AddHandler(store, config))
@@ -81,9 +85,8 @@ type API struct {
 
 func NewAPI(address string, config ServerConfig, store *store.Store) *API {
 	router := mux.NewRouter()
+	router.Use(func(next http.Handler) http.Handler { return handlers.LoggingHandler(os.Stdout, next) })
 	router.Path("/auth").Methods("POST").HandlerFunc(AuthHandler(store))
-	router.Path("/publish").Methods("POST").HandlerFunc(PublishHandler(store))
-	router.Path("/unpublish").Methods("POST").HandlerFunc(UnpublishHandler(store))
 
 	api := &API{
 		server: &http.Server{
