@@ -18,7 +18,7 @@ jobs:
 
       - name: Build
         run: | 
-          export GOBIN=$HOME/bin
+          export GOBIN=$HOME/go/bin
           echo $GOBIN
           echo $PATH
           make reqs-debian
