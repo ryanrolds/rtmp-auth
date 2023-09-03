@@ -41,8 +41,8 @@ application myrtmp {
   allow play all;
 
   # add this for authentication
-  on_publish http://127.0.0.1:8080/publish;
-  on_publish_done http://127.0.0.1:8080/unpublish;
+  on_publish http://127.0.0.1:8080/auth;
+  on_publish_done http://127.0.0.1:8080/auth;
 }
 ```
 
@@ -53,7 +53,7 @@ Change the auth to "http" in your srtrelay config and add the api url:
 type = "http"
 
 [auth.http]
-url = "http://localhost:8080/publish"
+url = "http://localhost:8080/auth"
 ```
 
 srtrelay doesn't currently support unpublish.
@@ -65,8 +65,8 @@ vhost __defaultVhost__ {
     ...
     http_hooks {
         enabled         on;
-        on_publish      http://172.17.0.1:8080/publish;
-        on_unpublish    http://172.17.0.1:8080/unpublish;
+        on_publish      http://172.17.0.1:8080/auth;
+        on_unpublish    http://172.17.0.1:8080/auth;
     }
     ...
 }

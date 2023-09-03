@@ -77,8 +77,16 @@ type SRSPublish struct {
 func handleSRSRequest(r *http.Request) (app string, name string, auth string, action string, err error) {
 	defer r.Body.Close()
 	var publish SRSPublish
-	dec := json.NewDecoder(r.Body)
-	err = dec.Decode(&publish)
+
+	body := make([]byte, r.ContentLength)
+	_, err = r.Body.Read(body)
+	if err != nil {
+		return
+	}
+
+	log.Printf("SRS request: %s\n", body)
+
+	err = json.Unmarshal(body, &publish)
 	if err != nil {
 		return
 	}
@@ -105,6 +113,14 @@ func handleNginxRequest(r *http.Request) (app string, name string, auth string, 
 		return
 	}
 
+	body := make([]byte, r.ContentLength)
+	_, err = r.Body.Read(body)
+	if err != nil {
+		return
+	}
+
+	log.Printf("Nginx request: %s\n", body)
+
 	app = r.PostForm.Get("app")
 	name = r.PostForm.Get("name")
 	auth = r.PostForm.Get("auth")
@@ -123,13 +139,12 @@ func AuthHandler(store *store.Store) handleFunc {
 		var action string
 		var err error
 		if r.Header.Get("Content-Type") == "application/json" {
-			// SRS publish handler
+			// SRS handler
 			app, name, auth, action, err = handleSRSRequest(r)
 		} else {
 			// Form DATA from nginx-rtmp/srtrelay
 			app, name, auth, action, err = handleNginxRequest(r)
 		}
-
 		if err != nil {
 			log.Println("Failed to parse play data:", err)
 			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
