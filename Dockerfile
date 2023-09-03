@@ -1,6 +1,6 @@
 FROM golang:1.20-alpine AS builder
 
-RUN apk update && apk add --no-cache make protobuf-dev
+RUN apk update && apk add --no-cache make
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN make reqs
+RUN make reqs-alpine
 RUN make build
 
 # stage 2
