@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -75,12 +76,17 @@ type SRSPublish struct {
 }
 
 func handleSRSRequest(r *http.Request) (app string, name string, auth string, action string, err error) {
-	defer r.Body.Close()
 	var publish SRSPublish
+
+	if r.ContentLength == 0 {
+		err = errors.New("empty body")
+		return
+	}
 
 	body := make([]byte, r.ContentLength)
 	_, err = r.Body.Read(body)
 	if err != nil {
+		log.Printf("Failed to read body: %s", err)
 		return
 	}
 
@@ -113,13 +119,17 @@ func handleNginxRequest(r *http.Request) (app string, name string, auth string, 
 		return
 	}
 
-	body := make([]byte, r.ContentLength)
-	_, err = r.Body.Read(body)
-	if err != nil {
-		return
-	}
+	if r.ContentLength != 0 {
+		body := make([]byte, r.ContentLength)
+		_, err = r.Body.Read(body)
+		if err != nil {
+			return
+		}
 
-	log.Printf("Nginx request: %s\n", body)
+		log.Printf("Nginx request: %s\n", body)
+	} else {
+		log.Println("Nginx request: empty body")
+	}
 
 	app = r.PostForm.Get("app")
 	name = r.PostForm.Get("name")
