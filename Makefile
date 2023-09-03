@@ -18,12 +18,20 @@ $(STATIK_GENERATED): $(PUBLIC_FILES)
 	echo "$(PUBLIC_FILES)"
 	$(STATIK) -f -src=public/ -dest=.
 
-reqs-debian:
-	sudo apt update
-	sudo apt install -y protobuf-compiler
+req:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 	go install github.com/rakyll/statik
+
+reqs-alpine:
+	apk update
+	apk add --no-cache protobuf-dev
+	make reqs
+
+reqs-debian:
+	sudo apt update
+	sudo apt install -y protobuf-compiler
+	make reqs
 .PHONY: reqs
 
 build: $(PROTO_GENERATED) $(STATIK_GENERATED)

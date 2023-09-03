@@ -19,7 +19,7 @@ jobs:
       - name: Build
         run: | 
           make reqs-debian
-          make
+          make build
 
       - name: Login to Docker registry
         uses: docker/login-action@v2
