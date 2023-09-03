@@ -19,7 +19,8 @@ $(STATIK_GENERATED): $(PUBLIC_FILES)
 	$(STATIK) -f -src=public/ -dest=.
 
 reqs-debian:
-	sudo apt install -y protobuf-compiler --update
+	sudo apt update
+	sudo apt install -y protobuf-compiler
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 	go install github.com/rakyll/statik
