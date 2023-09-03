@@ -21,6 +21,9 @@ $(STATIK_GENERATED): $(PUBLIC_FILES)
 reqs-debian:
 	sudo apt update
 	sudo apt install -y protobuf-compiler
+	export GOPATH=$HOME/go
+	export PATH=$PATH:$GOPATH/bin
+
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 	go install github.com/rakyll/statik
@@ -28,7 +31,8 @@ reqs-debian:
 .PHONY: reqs
 
 build: $(PROTO_GENERATED) $(STATIK_GENERATED)
-	export PATH="$PATH:$(go env GOPATH)/bin"
+	export GOPATH=$HOME/go
+	export PATH=$PATH:$GOPATH/bin
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/rtmp-auth
 .PHONY: build
 
