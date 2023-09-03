@@ -50,10 +50,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
-          gh workflow run image_update.yaml \
-            -R ryanrolds/infrastructure \
-            -r main \
-            -F chart=rtmp \
-            -F values_file=values.yaml \ 
-            -F tag_path=rtmpAuth.tag \
-            -F tag=${{ github.sha }}
+          gh workflow run image_update.yaml -R ryanrolds/infrastructure -r main -F chart=rtmp -F values_file=values.yaml -F tag_path=rtmpAuth.tag -F tag=${{ github.sha }}
