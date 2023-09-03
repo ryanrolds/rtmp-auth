@@ -28,6 +28,7 @@ reqs-debian:
 .PHONY: reqs
 
 build: $(PROTO_GENERATED) $(STATIK_GENERATED)
+	export PATH="$PATH:$(go env GOPATH)/bin"
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/rtmp-auth
 .PHONY: build
 
