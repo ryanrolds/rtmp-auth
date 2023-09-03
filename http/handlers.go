@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -119,22 +120,24 @@ func handleNginxRequest(r *http.Request) (app string, name string, auth string, 
 		return
 	}
 
-	if r.ContentLength != 0 {
-		body := make([]byte, r.ContentLength)
-		_, err = r.Body.Read(body)
-		if err != nil {
-			return
-		}
-
-		log.Printf("Nginx request: %s\n", body)
-	} else {
-		log.Println("Nginx request: empty body")
-	}
-
 	app = r.PostForm.Get("app")
 	name = r.PostForm.Get("name")
 	auth = r.PostForm.Get("auth")
 	action = r.PostForm.Get("call")
+	log.Printf("Nginx request: %s %s %s %s", app, name, auth, action)
+
+	var body []byte
+	if r.ContentLength != 0 {
+		body, err = io.ReadAll(r.Body)
+		if err != nil {
+			return
+		}
+
+		log.Printf("Nginx request body: %s\n", string(body))
+	} else {
+		log.Println("Nginx request: empty body")
+	}
+
 	return
 }
 
